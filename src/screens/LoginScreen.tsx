@@ -3,19 +3,33 @@ import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { isPreviewMode } from "@/lib/preview";
 
 export function LoginScreen() {
   const { user, loading, signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up">("in");
-  const [email, setEmail] = useState("demo@timeflow.dev");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  // Starts false (SSR-safe: window/env aren't reliably known during server
+  // render) and flips in an effect — the demo shortcut only ever appears in
+  // an actual preview build, never accidentally shipped to a real tenant
+  // (audit 5.3: this used to prefill unconditionally).
+  const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
     if (!loading && user) navigate({ to: "/dashboard" });
   }, [loading, user, navigate]);
+
+  useEffect(() => {
+    if (isPreviewMode()) {
+      setIsDemo(true);
+      setEmail("demo@timeflow.dev");
+      setPassword("demo1234");
+    }
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +77,9 @@ export function LoginScreen() {
 
           {mode === "up" && (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Nome</label>
+              <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+                Nome
+              </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -73,7 +89,9 @@ export function LoginScreen() {
             </div>
           )}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">E-mail</label>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+              E-mail
+            </label>
             <input
               type="email"
               required
@@ -84,7 +102,9 @@ export function LoginScreen() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Senha</label>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+              Senha
+            </label>
             <input
               type="password"
               required
@@ -100,9 +120,11 @@ export function LoginScreen() {
           >
             {busy ? "Aguarde..." : mode === "in" ? "Entrar" : "Criar conta"}
           </button>
-          <p className="pt-1 text-center text-[11px] text-[var(--text-muted)]">
-            Modo preview: qualquer credencial entra como admin demo.
-          </p>
+          {isDemo && (
+            <p className="pt-1 text-center text-[11px] text-[var(--text-muted)]">
+              Modo preview: qualquer credencial entra como admin demo.
+            </p>
+          )}
         </form>
       </div>
     </div>

@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth";
 import { ThemeProvider } from "../lib/theme";
+import { isPreviewMode } from "../lib/preview";
 import { installPreviewFetch } from "../../preview-fixtures";
 
 function NotFoundComponent() {
@@ -24,7 +25,10 @@ function NotFoundComponent() {
         <p className="mt-2 text-sm text-[var(--text-muted)]">
           A página que você procura não existe ou foi movida.
         </p>
-        <a href="/" className="mt-6 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-[var(--primary-hover)]">
+        <a
+          href="/"
+          className="mt-6 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-[var(--primary-hover)]"
+        >
           Voltar ao início
         </a>
       </div>
@@ -46,7 +50,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         </p>
         <div className="mt-6 flex justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-[var(--primary-hover)]"
           >
             Tentar de novo
@@ -63,15 +70,32 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "TimeFlow — Work Management & Time Tracking" },
-      { name: "description", content: "Registre horas, gerencie projetos e clientes e fature com precisão." },
+      {
+        name: "description",
+        content: "Registre horas, gerencie projetos e clientes e fature com precisão.",
+      },
       { property: "og:title", content: "TimeFlow — Work Management & Time Tracking" },
-      { property: "og:description", content: "Registre horas, gerencie projetos e clientes e fature com precisão." },
+      {
+        property: "og:description",
+        content: "Registre horas, gerencie projetos e clientes e fature com precisão.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "TimeFlow — Work Management & Time Tracking" },
-      { name: "twitter:description", content: "Registre horas, gerencie projetos e clientes e fature com precisão." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ad42bc0d-6d36-4be6-820a-1e5c0f22ccf3/id-preview-c5cc9328--7def02b3-93ac-4310-abe1-a74e93627eb2.lovable.app-1783093382636.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ad42bc0d-6d36-4be6-820a-1e5c0f22ccf3/id-preview-c5cc9328--7def02b3-93ac-4310-abe1-a74e93627eb2.lovable.app-1783093382636.png" },
+      {
+        name: "twitter:description",
+        content: "Registre horas, gerencie projetos e clientes e fature com precisão.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ad42bc0d-6d36-4be6-820a-1e5c0f22ccf3/id-preview-c5cc9328--7def02b3-93ac-4310-abe1-a74e93627eb2.lovable.app-1783093382636.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ad42bc0d-6d36-4be6-820a-1e5c0f22ccf3/id-preview-c5cc9328--7def02b3-93ac-4310-abe1-a74e93627eb2.lovable.app-1783093382636.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -104,15 +128,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
-    // Preview mode: either the editor explicitly flags it via
-    // window.__MASI_PREVIEW__ (Sandpack/editor preview, injected at runtime)
-    // or there's no gateway configured at all (local dev without a gateway
-    // URL). Either case installs the fetch interceptor with fixtures instead
-    // of hitting a real backend.
-    const isPreview =
-      (window as unknown as { __MASI_PREVIEW__?: boolean }).__MASI_PREVIEW__ === true ||
-      !import.meta.env.VITE_GATEWAY_URL;
-    if (isPreview) {
+    if (isPreviewMode()) {
       installPreviewFetch();
     }
   }, []);

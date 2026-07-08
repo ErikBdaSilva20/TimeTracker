@@ -95,6 +95,7 @@
       "src/lib/billing.ts",
       "src/lib/domain.ts",
       "src/lib/mutations.ts",
+      "src/lib/preview.ts",
       "src/lib/timer-session.ts",
       "src/styles.css"
     ],
