@@ -1,16 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
+import { startOfWeek } from "date-fns";
 import { timeEntriesRepo, projectsRepo } from "@/lib/data";
 import { PageBody, PageHeader, StatCard } from "@/components/layout/PageHeader";
 import { formatCurrency, formatHours } from "@/lib/format";
+import { calculateRevenue } from "@/lib/billing";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
-
-function startOfWeek(d: Date) {
-  const x = new Date(d);
-  const day = (x.getDay() + 6) % 7;
-  x.setDate(x.getDate() - day);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
 
 export function DashboardScreen() {
   const entriesQ = useQuery({ queryKey: ["time_entries"], queryFn: () => timeEntriesRepo.list() });
@@ -21,12 +15,11 @@ export function DashboardScreen() {
 
   const today = new Date();
   const todayISO = today.toISOString().slice(0, 10);
-  const weekStart = startOfWeek(today);
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // semana começa segunda
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
   const sum = (rows: typeof entries) => rows.reduce((a, r) => a + (r.duration_minutes || 0), 0);
-  const revenue = (rows: typeof entries) =>
-    rows.reduce((a, r) => a + ((r.duration_minutes || 0) / 60) * (r.hour_rate || 0) * (r.billable ? 1 : 0), 0);
+  const revenue = (rows: typeof entries) => rows.reduce((a, r) => a + calculateRevenue(r), 0);
 
   const todayEntries = entries.filter((e) => e.date === todayISO);
   const weekEntries = entries.filter((e) => new Date(e.date) >= weekStart);

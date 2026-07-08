@@ -82,12 +82,14 @@ export function EmptyState({
   );
 }
 
+export type BadgeTone = "primary" | "secondary" | "muted" | "danger";
+
 export function Badge({
   children,
   tone = "muted",
 }: {
   children: ReactNode;
-  tone?: "primary" | "secondary" | "muted" | "danger";
+  tone?: BadgeTone;
 }) {
   const styles =
     tone === "primary"
@@ -103,6 +105,44 @@ export function Badge({
     >
       {children}
     </span>
+  );
+}
+
+/**
+ * FormField
+ * ---
+ * Input com label no estilo padrão dos formulários do app (card-surface +
+ * grid). Extraído para cá porque a mesma marcação estava duplicada em
+ * ClientsScreen/ProjectsScreen/ContactsScreen/TeamScreen — novos formulários
+ * devem importar daqui em vez de redeclarar localmente.
+ */
+export function FormField({
+  name,
+  label,
+  type = "text",
+  required,
+  defaultValue,
+}: {
+  name: string;
+  label: string;
+  type?: string;
+  required?: boolean;
+  defaultValue?: string | number | null;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+        {label}
+        {required && " *"}
+      </label>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        defaultValue={defaultValue ?? ""}
+        className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm outline-none focus:border-primary"
+      />
+    </div>
   );
 }
 

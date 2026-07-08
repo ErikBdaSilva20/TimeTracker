@@ -2,17 +2,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { PageBody, PageHeader, EmptyState, StatCard, Badge } from "@/components/layout/PageHeader";
+import {
+  PageBody,
+  PageHeader,
+  EmptyState,
+  StatCard,
+  Badge,
+  ResponsiveTable,
+} from "@/components/layout/PageHeader";
 import { invoicesRepo, clientsRepo, timeEntriesRepo, type InvoiceRow } from "@/lib/data";
 import { formatCurrency, formatDate, formatHours } from "@/lib/format";
-
-const STATUS_TONE: Record<InvoiceRow["status"], "primary" | "secondary" | "muted" | "danger"> = {
-  draft: "muted",
-  sent: "secondary",
-  paid: "primary",
-  overdue: "danger",
-  cancelled: "muted",
-};
+import { calculateRevenue } from "@/lib/billing";
+import { INVOICE_STATUS } from "@/lib/domain";
+import { useConfirm } from "@/hooks/useConfirm";
 
 export function InvoicesScreen() {
   const qc = useQueryClient();
@@ -22,6 +24,7 @@ export function InvoicesScreen() {
 
   const [showForm, setShowForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const { confirm, dialog } = useConfirm();
 
   const clientsMap = useMemo(
     () => new Map((clientsQ.data ?? []).map((c) => [c.id, c])),
@@ -58,10 +61,7 @@ export function InvoicesScreen() {
         (!periodEnd || en.date <= periodEnd),
     );
     const totalMinutes = entries.reduce((a, en) => a + (en.duration_minutes || 0), 0);
-    const totalAmount = entries.reduce(
-      (a, en) => a + ((en.duration_minutes || 0) / 60) * (en.hour_rate || 0),
-      0,
-    );
+    const totalAmount = entries.reduce((a, en) => a + calculateRevenue(en), 0);
     const payload: Partial<InvoiceRow> = {
       client_id: clientId || null,
       invoice_number: String(fd.get("invoice_number") || `INV-${Date.now().toString().slice(-6)}`),
@@ -88,7 +88,7 @@ export function InvoicesScreen() {
   };
 
   const onDelete = async (id: string) => {
-    if (!confirm("Excluir fatura?")) return;
+    if (!(await confirm("Excluir fatura?"))) return;
     await invoicesRepo.remove(id);
     qc.invalidateQueries({ queryKey: ["invoices"] });
     toast.success("Fatura excluída");
@@ -96,6 +96,7 @@ export function InvoicesScreen() {
 
   return (
     <>
+      {dialog}
       <PageHeader
         title="Invoices"
         description="Gere faturas a partir de time entries faturáveis."
@@ -127,7 +128,7 @@ export function InvoicesScreen() {
                   : "border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
               }`}
             >
-              {s === "all" ? "Todos" : s}
+              {s === "all" ? "Todos" : INVOICE_STATUS[s as InvoiceRow["status"]].label}
             </button>
           ))}
         </div>
@@ -191,11 +192,11 @@ export function InvoicesScreen() {
                   defaultValue="draft"
                   className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm"
                 >
-                  <option value="draft">Rascunho</option>
-                  <option value="sent">Enviada</option>
-                  <option value="paid">Paga</option>
-                  <option value="overdue">Atrasada</option>
-                  <option value="cancelled">Cancelada</option>
+                  {(Object.keys(INVOICE_STATUS) as InvoiceRow["status"][]).map((s) => (
+                    <option key={s} value={s}>
+                      {INVOICE_STATUS[s].label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -225,8 +226,7 @@ export function InvoicesScreen() {
             description="Gere sua primeira fatura consolidando as entradas de tempo faturáveis de um cliente."
           />
         ) : (
-          <div className="card-surface overflow-hidden !p-0">
-            <div className="overflow-x-auto">
+          <ResponsiveTable>
             <table className="w-full min-w-[820px] text-sm">
               <thead className="bg-[var(--background-tertiary)] text-[var(--text-muted)]">
                 <tr>
@@ -270,14 +270,14 @@ export function InvoicesScreen() {
                         }
                         className="rounded-md border-0 bg-transparent p-0 text-xs"
                       >
-                        <option value="draft">draft</option>
-                        <option value="sent">sent</option>
-                        <option value="paid">paid</option>
-                        <option value="overdue">overdue</option>
-                        <option value="cancelled">cancelled</option>
+                        {(Object.keys(INVOICE_STATUS) as InvoiceRow["status"][]).map((s) => (
+                          <option key={s} value={s}>
+                            {INVOICE_STATUS[s].label}
+                          </option>
+                        ))}
                       </select>
                       <div className="mt-1">
-                        <Badge tone={STATUS_TONE[i.status]}>{i.status}</Badge>
+                        <Badge tone={INVOICE_STATUS[i.status].tone}>{INVOICE_STATUS[i.status].label}</Badge>
                       </div>
                     </td>
                     <td className="px-5 py-3 text-right">
@@ -292,8 +292,7 @@ export function InvoicesScreen() {
                 ))}
               </tbody>
             </table>
-            </div>
-          </div>
+          </ResponsiveTable>
         )}
       </PageBody>
     </>

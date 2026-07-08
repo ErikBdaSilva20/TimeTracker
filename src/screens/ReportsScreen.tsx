@@ -9,6 +9,7 @@ import {
   membersRepo,
 } from "@/lib/data";
 import { formatCurrency, formatDate, formatHours } from "@/lib/format";
+import { calculateRevenue } from "@/lib/billing";
 
 type GroupBy = "project" | "client" | "member" | "task";
 
@@ -48,10 +49,7 @@ export function ReportsScreen() {
     const billableMin = filtered
       .filter((e) => e.billable)
       .reduce((a, e) => a + (e.duration_minutes || 0), 0);
-    const revenue = filtered.reduce(
-      (a, e) => a + ((e.duration_minutes || 0) / 60) * (e.hour_rate || 0) * (e.billable ? 1 : 0),
-      0,
-    );
+    const revenue = filtered.reduce((a, e) => a + calculateRevenue(e), 0);
     return { minutes, billableMin, revenue, count: filtered.length };
   }, [filtered]);
 
@@ -78,7 +76,7 @@ export function ReportsScreen() {
       }
       const cur = map.get(key) ?? { key, label, minutes: 0, revenue: 0, count: 0 };
       cur.minutes += e.duration_minutes || 0;
-      cur.revenue += ((e.duration_minutes || 0) / 60) * (e.hour_rate || 0) * (e.billable ? 1 : 0);
+      cur.revenue += calculateRevenue(e);
       cur.count += 1;
       map.set(key, cur);
     }
@@ -317,9 +315,7 @@ export function ReportsScreen() {
                         </td>
                         <td className="px-3 py-2">{formatHours(e.duration_minutes)}</td>
                         <td className="px-3 py-2 text-xs">
-                          {e.billable ? formatCurrency(
-                            ((e.duration_minutes || 0) / 60) * (e.hour_rate || 0),
-                          ) : "—"}
+                          {e.billable ? formatCurrency(calculateRevenue(e)) : "—"}
                         </td>
                       </tr>
                     ))}

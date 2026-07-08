@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "engine": "vite-react-gateway",
   "schemaVersion": 1,
-  "migrations": ["db/migrations/0001_business_schema.sql"],
+  "migrations": ["supabase/migrations/0001_business_schema.sql"],
   "auth": { "provider": "better-auth", "roles": ["admin", "manager", "rep"] },
   "screens": [
     {
@@ -19,6 +19,12 @@
       "route": "/clients",
       "title": "Clientes",
       "file": "src/screens/ClientsScreen"
+    },
+    {
+      "id": "contacts",
+      "route": "/contacts",
+      "title": "Contatos",
+      "file": "src/screens/ContactsScreen"
     },
     {
       "id": "projects",
@@ -70,12 +76,15 @@
   "editable": {
     "allow": [
       "src/screens/**",
+      "src/routes/_app.*.tsx",
+      "src/routes/login.tsx",
       "src/components/**",
-      "src/features/**",
       "src/hooks/**",
       "src/lib/data/*.repo.ts",
       "src/lib/data/index.ts",
       "src/lib/format.ts",
+      "src/lib/billing.ts",
+      "src/lib/domain.ts",
       "src/styles.css"
     ],
     "protect": [
@@ -85,7 +94,15 @@
       "src/components/ui/**",
       "src/lib/utils.ts",
       "preview-fixtures.ts",
-      "db/migrations/**"
+      "supabase/migrations/**",
+      "vite.config.ts",
+      "src/server.ts",
+      "src/start.ts",
+      "src/router.tsx",
+      "src/routeTree.gen.ts",
+      "src/routes/__root.tsx",
+      "src/routes/_app.tsx",
+      "src/routes/index.tsx"
     ]
   },
   "composio": { "toolkits": [] },

@@ -25,7 +25,7 @@ contrato do gateway de produção, mas gravando em um **Postgres real**.
 ```
 
 O gateway local:
-- roda as migrations de `db/migrations/` no boot;
+- roda as migrations de `supabase/migrations/` no boot;
 - cria a tabela `user` (Better-Auth-like) e faz login por cookie de sessão;
 - define `owner_id` pela sessão (o front **nunca** manda `owner_id`);
 - isola cada usuário (multi-tenant): você só vê seus próprios dados;
@@ -85,7 +85,7 @@ http://localhost:5173/?gw=http://localhost:8787
 ### ✅ Conforme / funcionando
 - **Contrato de dados** (`client.ts`): `db.table().list/create/update/remove`,
   `credentials: 'include'`, header `X-Tenant-Id`. Não foi alterado.
-- **Schema** (`db/migrations/0001_business_schema.sql`): `owner_id text
+- **Schema** (`supabase/migrations/0001_business_schema.sql`): `owner_id text
   references "user"(id)` em todas as tabelas, `snake_case`, sem RLS. Aplicado
   com sucesso pelo gateway local (testado).
 - **Isolamento multi-tenant**: cada request só lê/escreve linhas do próprio
@@ -95,17 +95,15 @@ http://localhost:5173/?gw=http://localhost:8787
 - **Sem** `@supabase`, sem fetch cru ao banco, sem driver SQL no browser.
 
 ### ⚠️ Pontos de atenção (não bloqueiam o local, mas valem correção futura)
-Detalhados em `fix.md`. Os principais:
+Detalhados e rastreados em `AUDITORIA-CONSOLIDADA.md`. O principal em aberto:
 1. **Stack diverge do contrato oficial**: o projeto está em **TanStack Start
    (SSR)**, mas o template `vite-react-gateway` pede **Vite SPA + react-router-dom**.
    Sintoma visível: *warning de hydration* no console. Funciona localmente, mas
-   foge da fundação esperada pelo hub.
-2. **Migrations em `db/migrations/`** — o publisher oficial espera
-   `supabase/migrations/`.
-3. **Preview mode** usa o gate `!VITE_GATEWAY_URL`; o contrato pede
-   `window.__MASI_PREVIEW__`.
-4. **`masi.template.json`**: `protect` incompleto e a tela `settings` aponta para
-   arquivo inexistente.
+   foge da fundação esperada pelo hub. Decisão de arquitetura pendente
+   (`AUDITORIA-CONSOLIDADA.md`, achado 0.1).
+
+Já corrigidos: migrations movidas para `supabase/migrations/` (achado 1.5), gate
+de preview usando `window.__MASI_PREVIEW__` (achado 1.4).
 
 > O gateway local em `local-gateway/` é **apenas para desenvolvimento**. Em
 > produção, o backend continua sendo o gateway compartilhado da MasIA — nada

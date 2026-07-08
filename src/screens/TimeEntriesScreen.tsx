@@ -2,9 +2,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Plus, Play, Square } from "lucide-react";
 import { toast } from "sonner";
-import { PageBody, PageHeader, EmptyState, Badge } from "@/components/layout/PageHeader";
+import {
+  PageBody,
+  PageHeader,
+  EmptyState,
+  Badge,
+  ResponsiveTable,
+} from "@/components/layout/PageHeader";
 import { clientsRepo, projectsRepo, tasksRepo, timeEntriesRepo, membersRepo, type TimeEntryRow } from "@/lib/data";
 import { formatHours } from "@/lib/format";
+import { useConfirm } from "@/hooks/useConfirm";
 
 export function TimeEntriesScreen() {
   const qc = useQueryClient();
@@ -16,6 +23,7 @@ export function TimeEntriesScreen() {
 
   const [filter, setFilter] = useState<{ project?: string; client?: string }>({});
   const [showForm, setShowForm] = useState(false);
+  const { confirm, dialog } = useConfirm();
 
   const projectsMap = useMemo(() => new Map((projectsQ.data ?? []).map((p) => [p.id, p])), [projectsQ.data]);
   const clientsMap = useMemo(() => new Map((clientsQ.data ?? []).map((c) => [c.id, c])), [clientsQ.data]);
@@ -68,6 +76,7 @@ export function TimeEntriesScreen() {
 
   return (
     <>
+      {dialog}
       <PageHeader
         title="Time Entries"
         description="Todos os registros de tempo — a fonte da verdade do trabalho realizado."
@@ -144,8 +153,7 @@ export function TimeEntriesScreen() {
         ) : entries.length === 0 ? (
           <EmptyState title="Sem registros" description="Registre horas via Timer ou manualmente." action={<button onClick={() => setShowForm(true)} className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"><Plus className="mr-1 inline h-4 w-4" />Novo registro</button>} />
         ) : (
-          <div className="card-surface overflow-hidden !p-0">
-            <div className="overflow-x-auto">
+          <ResponsiveTable>
             <table className="w-full min-w-[820px] text-sm">
               <thead className="bg-[var(--background-tertiary)] text-[var(--text-muted)]">
                 <tr>
@@ -171,14 +179,13 @@ export function TimeEntriesScreen() {
                     <td className="px-5 py-3 font-medium">{formatHours(e.duration_minutes)}</td>
                     <td className="px-5 py-3">{e.billable ? <Badge tone="primary">sim</Badge> : <Badge>não</Badge>}</td>
                     <td className="px-5 py-3 text-right">
-                      <button onClick={async () => { if (confirm("Excluir?")) { await timeEntriesRepo.remove(e.id); qc.invalidateQueries({ queryKey: ["time_entries"] }); } }} className="text-xs text-red-400 hover:underline">Excluir</button>
+                      <button onClick={async () => { if (await confirm("Excluir?")) { await timeEntriesRepo.remove(e.id); qc.invalidateQueries({ queryKey: ["time_entries"] }); } }} className="text-xs text-red-400 hover:underline">Excluir</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            </div>
-          </div>
+          </ResponsiveTable>
         )}
       </PageBody>
     </>

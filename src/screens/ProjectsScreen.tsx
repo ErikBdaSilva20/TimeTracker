@@ -2,9 +2,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { PageBody, PageHeader, EmptyState, Badge } from "@/components/layout/PageHeader";
+import { PageBody, PageHeader, EmptyState, Badge, FormField } from "@/components/layout/PageHeader";
 import { projectsRepo, clientsRepo, timeEntriesRepo, type ProjectRow } from "@/lib/data";
 import { formatCurrency, formatHours } from "@/lib/format";
+import { PROJECT_STATUS } from "@/lib/domain";
+import { useConfirm } from "@/hooks/useConfirm";
 
 export function ProjectsScreen() {
   const qc = useQueryClient();
@@ -13,6 +15,7 @@ export function ProjectsScreen() {
   const entriesQ = useQuery({ queryKey: ["time_entries"], queryFn: () => timeEntriesRepo.list() });
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ProjectRow | null>(null);
+  const { confirm, dialog } = useConfirm();
 
   const clientsMap = useMemo(() => new Map((clientsQ.data ?? []).map((c) => [c.id, c])), [clientsQ.data]);
   const minutesByProject = useMemo(() => {
@@ -51,6 +54,7 @@ export function ProjectsScreen() {
 
   return (
     <>
+      {dialog}
       <PageHeader
         title="Projetos"
         description="Orçamento, horas estimadas e progresso real por projeto."
@@ -71,10 +75,10 @@ export function ProjectsScreen() {
                   {(clientsQ.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
-              <Field name="name" label="Nome" required defaultValue={editing?.name} />
-              <Field name="estimated_hours" label="Horas estimadas" type="number" defaultValue={editing?.estimated_hours ?? ""} />
-              <Field name="hourly_rate" label="Valor/hora" type="number" defaultValue={editing?.hourly_rate ?? ""} />
-              <Field name="budget" label="Orçamento" type="number" defaultValue={editing?.budget ?? ""} />
+              <FormField name="name" label="Nome" required defaultValue={editing?.name} />
+              <FormField name="estimated_hours" label="Horas estimadas" type="number" defaultValue={editing?.estimated_hours ?? ""} />
+              <FormField name="hourly_rate" label="Valor/hora" type="number" defaultValue={editing?.hourly_rate ?? ""} />
+              <FormField name="budget" label="Orçamento" type="number" defaultValue={editing?.budget ?? ""} />
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Status</label>
                 <select name="status" defaultValue={editing?.status ?? "active"} className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm">
@@ -84,7 +88,7 @@ export function ProjectsScreen() {
                   <option value="archived">Arquivado</option>
                 </select>
               </div>
-              <Field name="color" label="Cor" type="color" defaultValue={editing?.color ?? "#22c55e"} />
+              <FormField name="color" label="Cor" type="color" defaultValue={editing?.color ?? "#22c55e"} />
               <div className="md:col-span-2">
                 <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Descrição</label>
                 <textarea name="description" defaultValue={editing?.description ?? ""} className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm" rows={3} />
@@ -118,7 +122,7 @@ export function ProjectsScreen() {
                         <div className="text-xs text-[var(--text-muted)]">{c?.name ?? "—"}</div>
                       </div>
                     </div>
-                    <Badge tone={p.status === "active" ? "primary" : p.status === "paused" ? "secondary" : "muted"}>{p.status}</Badge>
+                    <Badge tone={PROJECT_STATUS[p.status].tone}>{PROJECT_STATUS[p.status].label}</Badge>
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
                     <div><div className="text-[var(--text-muted)]">Realizado</div><div className="mt-0.5 font-medium">{formatHours(mins)}</div></div>
@@ -130,7 +134,7 @@ export function ProjectsScreen() {
                   </div>
                   <div className="mt-4 flex justify-end gap-2 text-xs">
                     <button onClick={() => { setEditing(p); setShowForm(true); }} className="text-[var(--secondary)] hover:underline">Editar</button>
-                    <button onClick={async () => { if (confirm("Excluir projeto?")) { await projectsRepo.remove(p.id); qc.invalidateQueries({ queryKey: ["projects"] }); toast.success("Excluído"); } }} className="text-red-400 hover:underline">Excluir</button>
+                    <button onClick={async () => { if (await confirm("Excluir projeto?")) { await projectsRepo.remove(p.id); qc.invalidateQueries({ queryKey: ["projects"] }); toast.success("Excluído"); } }} className="text-red-400 hover:underline">Excluir</button>
                   </div>
                 </div>
               );
@@ -139,14 +143,5 @@ export function ProjectsScreen() {
         )}
       </PageBody>
     </>
-  );
-}
-
-function Field({ name, label, type = "text", required, defaultValue }: { name: string; label: string; type?: string; required?: boolean; defaultValue?: string | number | null }) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">{label}{required && " *"}</label>
-      <input name={name} type={type} required={required} defaultValue={defaultValue ?? ""} className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm outline-none focus:border-primary" />
-    </div>
   );
 }

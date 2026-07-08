@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { startOfDay, startOfWeek } from "date-fns";
 import {
   Plus,
   Search,
@@ -18,7 +19,13 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { PageBody, EmptyState, Badge } from "@/components/layout/PageHeader";
+import {
+  PageBody,
+  EmptyState,
+  Badge,
+  FormField,
+  ResponsiveTable,
+} from "@/components/layout/PageHeader";
 import { AnimatedParticles } from "@/components/AnimatedParticles";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -29,21 +36,10 @@ import {
   type TimeEntryRow,
 } from "@/lib/data";
 import { formatCurrency, formatHours, formatDate } from "@/lib/format";
+import { calculateRevenue } from "@/lib/billing";
+import { useConfirm } from "@/hooks/useConfirm";
 
 /* ------------------------- helpers ------------------------- */
-
-function startOfWeek(d: Date) {
-  const x = new Date(d);
-  const day = (x.getDay() + 6) % 7; // seg=0
-  x.setDate(x.getDate() - day);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
 
 type MemberStatus = "online" | "offline" | "ausente";
 
@@ -83,13 +79,14 @@ export function TeamScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<MemberRow | null>(null);
+  const { confirm, dialog } = useConfirm();
 
   const entries = entriesQ.data ?? [];
   const members = membersQ.data ?? [];
   const activeProjects = (projectsQ.data ?? []).filter((p) => p.status === "active").length;
 
   const today = startOfDay(new Date());
-  const weekStart = startOfWeek(new Date());
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // semana começa segunda
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
   // Aggregate per member
@@ -123,7 +120,7 @@ export function TeamScreen() {
       }
       if (d >= monthStart) {
         cur.month += e.duration_minutes;
-        cur.revenue += ((e.duration_minutes || 0) / 60) * (e.hour_rate || 0) * (e.billable ? 1 : 0);
+        cur.revenue += calculateRevenue(e);
       }
       cur.entries.push(e);
       if (e.project_name) cur.projects.add(e.project_name);
@@ -192,7 +189,7 @@ export function TeamScreen() {
   };
 
   const onDelete = async (id: string) => {
-    if (!confirm("Excluir membro?")) return;
+    if (!(await confirm("Excluir membro?"))) return;
     await membersRepo.remove(id);
     if (selectedId === id) setSelectedId(null);
     qc.invalidateQueries({ queryKey: ["members"] });
@@ -227,6 +224,7 @@ export function TeamScreen() {
 
   return (
     <>
+      {dialog}
       <div className="relative overflow-hidden border-b border-[var(--border)] bg-[var(--background-secondary)]">
         <AnimatedParticles density={40} />
         <div className="relative flex flex-col gap-3 px-4 py-5 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:px-6 sm:py-6 lg:px-8">
@@ -386,16 +384,16 @@ export function TeamScreen() {
           </DialogHeader>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Field name="name" label="Nome" required defaultValue={editing?.name} />
-              <Field name="email" label="E-mail" type="email" defaultValue={editing?.email ?? ""} />
-              <Field name="role" label="Cargo" defaultValue={editing?.role ?? ""} />
-              <Field
+              <FormField name="name" label="Nome" required defaultValue={editing?.name} />
+              <FormField name="email" label="E-mail" type="email" defaultValue={editing?.email ?? ""} />
+              <FormField name="role" label="Cargo" defaultValue={editing?.role ?? ""} />
+              <FormField
                 name="hourly_rate"
                 label="Valor-hora (R$)"
                 type="number"
                 defaultValue={editing?.hourly_rate ?? ""}
               />
-              <Field
+              <FormField
                 name="weekly_goal"
                 label="Meta semanal (h)"
                 type="number"
@@ -673,8 +671,7 @@ function MemberList({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-      <div className="overflow-x-auto">
+    <ResponsiveTable>
       <table className="w-full min-w-[640px] text-sm">
         <thead className="bg-[var(--background-tertiary)] text-xs uppercase tracking-widest text-[var(--text-muted)]">
           <tr>
@@ -716,8 +713,7 @@ function MemberList({
           })}
         </tbody>
       </table>
-      </div>
-    </div>
+    </ResponsiveTable>
   );
 }
 
@@ -871,35 +867,5 @@ function Donut({ pct }: { pct: number }) {
         transform="rotate(-90 44 44)"
       />
     </svg>
-  );
-}
-
-function Field({
-  name,
-  label,
-  type = "text",
-  required,
-  defaultValue,
-}: {
-  name: string;
-  label: string;
-  type?: string;
-  required?: boolean;
-  defaultValue?: string | number | null;
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-        {label}
-        {required && " *"}
-      </label>
-      <input
-        name={name}
-        type={type}
-        required={required}
-        defaultValue={defaultValue ?? ""}
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm outline-none focus:border-primary"
-      />
-    </div>
   );
 }

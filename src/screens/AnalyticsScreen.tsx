@@ -17,6 +17,7 @@ import {
 import { PageBody, PageHeader, StatCard } from "@/components/layout/PageHeader";
 import { timeEntriesRepo, projectsRepo, clientsRepo, membersRepo } from "@/lib/data";
 import { formatCurrency, formatHours } from "@/lib/format";
+import { calculateRevenue } from "@/lib/billing";
 
 const PIE_COLORS = [
   "var(--primary)",
@@ -47,11 +48,7 @@ export function AnalyticsScreen() {
       (e) => new Date(e.date) >= prevMonthStart && new Date(e.date) <= prevMonthEnd,
     );
     const sumMin = (rows: typeof entries) => rows.reduce((a, e) => a + e.duration_minutes, 0);
-    const sumRev = (rows: typeof entries) =>
-      rows.reduce(
-        (a, e) => a + ((e.duration_minutes || 0) / 60) * (e.hour_rate || 0) * (e.billable ? 1 : 0),
-        0,
-      );
+    const sumRev = (rows: typeof entries) => rows.reduce((a, e) => a + calculateRevenue(e), 0);
     const curr = sumMin(currMonth);
     const prev = sumMin(prevMonth);
     const currRev = sumRev(currMonth);
@@ -81,10 +78,7 @@ export function AnalyticsScreen() {
         return d >= start && d <= end;
       });
       const mins = inRange.reduce((a, e) => a + e.duration_minutes, 0);
-      const rev = inRange.reduce(
-        (a, e) => a + ((e.duration_minutes || 0) / 60) * (e.hour_rate || 0) * (e.billable ? 1 : 0),
-        0,
-      );
+      const rev = inRange.reduce((a, e) => a + calculateRevenue(e), 0);
       buckets.push({
         label: `${start.getDate()}/${start.getMonth() + 1}`,
         hours: +(mins / 60).toFixed(1),
@@ -116,7 +110,7 @@ export function AnalyticsScreen() {
       const name = e.member_name || "Sem membro";
       const cur = map.get(key) ?? { name, hours: 0, revenue: 0 };
       cur.hours += e.duration_minutes;
-      cur.revenue += ((e.duration_minutes || 0) / 60) * (e.hour_rate || 0) * (e.billable ? 1 : 0);
+      cur.revenue += calculateRevenue(e);
       map.set(key, cur);
     }
     return Array.from(map.values())

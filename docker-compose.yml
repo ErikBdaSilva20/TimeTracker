@@ -39,7 +39,7 @@ services:
       - "8787:8787"
     volumes:
       # As migrations de negócio ficam no projeto e são aplicadas pelo gateway.
-      - ./db/migrations:/app/migrations:ro
+      - ./supabase/migrations:/app/migrations:ro
     depends_on:
       db:
         condition: service_healthy

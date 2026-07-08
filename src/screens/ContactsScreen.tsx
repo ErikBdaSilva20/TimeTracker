@@ -2,8 +2,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { PageBody, PageHeader, EmptyState } from "@/components/layout/PageHeader";
+import {
+  PageBody,
+  PageHeader,
+  EmptyState,
+  FormField,
+  ResponsiveTable,
+} from "@/components/layout/PageHeader";
 import { contactsRepo, clientsRepo, type ContactRow } from "@/lib/data";
+import { useConfirm } from "@/hooks/useConfirm";
 
 export function ContactsScreen() {
   const qc = useQueryClient();
@@ -12,6 +19,7 @@ export function ContactsScreen() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ContactRow | null>(null);
+  const { confirm, dialog } = useConfirm();
 
   const clientsMap = useMemo(
     () => new Map((clientsQ.data ?? []).map((c) => [c.id, c])),
@@ -50,7 +58,7 @@ export function ContactsScreen() {
   };
 
   const onDelete = async (id: string) => {
-    if (!confirm("Excluir contato?")) return;
+    if (!(await confirm("Excluir contato?"))) return;
     await contactsRepo.remove(id);
     qc.invalidateQueries({ queryKey: ["contacts"] });
     toast.success("Contato excluído");
@@ -58,6 +66,7 @@ export function ContactsScreen() {
 
   return (
     <>
+      {dialog}
       <PageHeader
         title="Contatos"
         description="Pessoas vinculadas aos seus clientes."
@@ -89,7 +98,7 @@ export function ContactsScreen() {
         {showForm && (
           <form onSubmit={onSubmit} className="card-surface space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Field name="name" label="Nome" required defaultValue={editing?.name} />
+              <FormField name="name" label="Nome" required defaultValue={editing?.name} />
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                   Cliente
@@ -107,19 +116,19 @@ export function ContactsScreen() {
                   ))}
                 </select>
               </div>
-              <Field name="role" label="Cargo" defaultValue={editing?.role ?? ""} />
-              <Field
+              <FormField name="role" label="Cargo" defaultValue={editing?.role ?? ""} />
+              <FormField
                 name="department"
                 label="Departamento"
                 defaultValue={editing?.department ?? ""}
               />
-              <Field
+              <FormField
                 name="email"
                 label="E-mail"
                 type="email"
                 defaultValue={editing?.email ?? ""}
               />
-              <Field name="phone" label="Telefone" defaultValue={editing?.phone ?? ""} />
+              <FormField name="phone" label="Telefone" defaultValue={editing?.phone ?? ""} />
               <div className="md:col-span-2">
                 <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                   Notas
@@ -161,8 +170,7 @@ export function ContactsScreen() {
             description="Adicione as pessoas com quem você fala em cada cliente."
           />
         ) : (
-          <div className="card-surface overflow-hidden !p-0">
-            <div className="overflow-x-auto">
+          <ResponsiveTable>
             <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-[var(--background-tertiary)] text-[var(--text-muted)]">
                 <tr>
@@ -208,40 +216,9 @@ export function ContactsScreen() {
                 ))}
               </tbody>
             </table>
-            </div>
-          </div>
+          </ResponsiveTable>
         )}
       </PageBody>
     </>
-  );
-}
-
-function Field({
-  name,
-  label,
-  type = "text",
-  required,
-  defaultValue,
-}: {
-  name: string;
-  label: string;
-  type?: string;
-  required?: boolean;
-  defaultValue?: string | number | null;
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-        {label}
-        {required && " *"}
-      </label>
-      <input
-        name={name}
-        type={type}
-        required={required}
-        defaultValue={defaultValue ?? ""}
-        className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm outline-none focus:border-primary"
-      />
-    </div>
   );
 }

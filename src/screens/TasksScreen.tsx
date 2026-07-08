@@ -2,8 +2,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { PageBody, PageHeader, EmptyState, Badge } from "@/components/layout/PageHeader";
+import {
+  PageBody,
+  PageHeader,
+  EmptyState,
+  Badge,
+  ResponsiveTable,
+} from "@/components/layout/PageHeader";
 import { tasksRepo, projectsRepo, membersRepo, type TaskRow } from "@/lib/data";
+import { TASK_STATUS } from "@/lib/domain";
+import { useConfirm } from "@/hooks/useConfirm";
 
 export function TasksScreen() {
   const qc = useQueryClient();
@@ -12,6 +20,7 @@ export function TasksScreen() {
   const membersQ = useQuery({ queryKey: ["members"], queryFn: () => membersRepo.list() });
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<string>("");
+  const { confirm, dialog } = useConfirm();
 
   const projectsMap = useMemo(() => new Map((projectsQ.data ?? []).map((p) => [p.id, p])), [projectsQ.data]);
   const membersMap = useMemo(() => new Map((membersQ.data ?? []).map((m) => [m.id, m])), [membersQ.data]);
@@ -36,6 +45,7 @@ export function TasksScreen() {
 
   return (
     <>
+      {dialog}
       <PageHeader
         title="Tasks"
         description="Divida projetos em tarefas rastreáveis."
@@ -103,8 +113,7 @@ export function TasksScreen() {
         ) : tasks.length === 0 ? (
           <EmptyState title="Sem tasks" description="Adicione tasks para dividir e acompanhar o trabalho." />
         ) : (
-          <div className="card-surface overflow-hidden !p-0">
-            <div className="overflow-x-auto">
+          <ResponsiveTable>
             <table className="w-full min-w-[720px] text-sm">
               <thead className="bg-[var(--background-tertiary)] text-[var(--text-muted)]">
                 <tr>
@@ -123,16 +132,21 @@ export function TasksScreen() {
                     <td className="px-5 py-3 text-[var(--text-secondary)]">{t.project_id ? projectsMap.get(t.project_id)?.name : "—"}</td>
                     <td className="px-5 py-3 text-[var(--text-secondary)]">{t.member_id ? membersMap.get(t.member_id)?.name : "—"}</td>
                     <td className="px-5 py-3"><Badge tone={t.priority === "urgent" ? "danger" : t.priority === "high" ? "secondary" : "muted"}>{t.priority}</Badge></td>
-                    <td className="px-5 py-3"><Badge tone={t.status === "done" ? "primary" : "muted"}>{t.status}</Badge></td>
+                    <td className="px-5 py-3">
+                      {t.status ? (
+                        <Badge tone={TASK_STATUS[t.status].tone}>{TASK_STATUS[t.status].label}</Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="px-5 py-3 text-right">
-                      <button onClick={async () => { if (confirm("Excluir?")) { await tasksRepo.remove(t.id); qc.invalidateQueries({ queryKey: ["tasks"] }); } }} className="text-xs text-red-400 hover:underline">Excluir</button>
+                      <button onClick={async () => { if (await confirm("Excluir?")) { await tasksRepo.remove(t.id); qc.invalidateQueries({ queryKey: ["tasks"] }); } }} className="text-xs text-red-400 hover:underline">Excluir</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            </div>
-          </div>
+          </ResponsiveTable>
         )}
       </PageBody>
     </>

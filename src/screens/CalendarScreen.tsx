@@ -1,13 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { startOfMonth } from "date-fns";
 import { PageBody, PageHeader, Badge } from "@/components/layout/PageHeader";
 import { timeEntriesRepo } from "@/lib/data";
 import { formatHours } from "@/lib/format";
 
-function startOfMonth(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
 function addMonths(d: Date, n: number) {
   return new Date(d.getFullYear(), d.getMonth() + n, 1);
 }

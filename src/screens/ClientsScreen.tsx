@@ -2,8 +2,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { PageBody, PageHeader, EmptyState, Badge } from "@/components/layout/PageHeader";
+import {
+  PageBody,
+  PageHeader,
+  EmptyState,
+  Badge,
+  FormField,
+  ResponsiveTable,
+} from "@/components/layout/PageHeader";
 import { clientsRepo, type ClientRow } from "@/lib/data";
+import { CLIENT_STATUS } from "@/lib/domain";
+import { useConfirm } from "@/hooks/useConfirm";
+import { formatCurrency } from "@/lib/format";
 
 export function ClientsScreen() {
   const qc = useQueryClient();
@@ -11,6 +21,7 @@ export function ClientsScreen() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ClientRow | null>(null);
+  const { confirm, dialog } = useConfirm();
 
   const clients = (q.data ?? []).filter((c) =>
     !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.company || "").toLowerCase().includes(search.toLowerCase()),
@@ -39,7 +50,7 @@ export function ClientsScreen() {
   };
 
   const onDelete = async (id: string) => {
-    if (!confirm("Excluir cliente?")) return;
+    if (!(await confirm("Excluir cliente?"))) return;
     await clientsRepo.remove(id);
     qc.invalidateQueries({ queryKey: ["clients"] });
     toast.success("Cliente excluído");
@@ -47,6 +58,7 @@ export function ClientsScreen() {
 
   return (
     <>
+      {dialog}
       <PageHeader
         title="Clientes"
         description="Gerencie clientes, contatos e taxas padrão."
@@ -75,11 +87,11 @@ export function ClientsScreen() {
         {showForm && (
           <form onSubmit={onSubmit} className="card-surface space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Field name="name" label="Nome" required defaultValue={editing?.name} />
-              <Field name="company" label="Empresa" defaultValue={editing?.company ?? ""} />
-              <Field name="email" label="E-mail" type="email" defaultValue={editing?.email ?? ""} />
-              <Field name="phone" label="Telefone" defaultValue={editing?.phone ?? ""} />
-              <Field name="rate" label="Valor-hora padrão" type="number" defaultValue={editing?.default_hour_rate ?? ""} />
+              <FormField name="name" label="Nome" required defaultValue={editing?.name} />
+              <FormField name="company" label="Empresa" defaultValue={editing?.company ?? ""} />
+              <FormField name="email" label="E-mail" type="email" defaultValue={editing?.email ?? ""} />
+              <FormField name="phone" label="Telefone" defaultValue={editing?.phone ?? ""} />
+              <FormField name="rate" label="Valor-hora padrão" type="number" defaultValue={editing?.default_hour_rate ?? ""} />
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Status</label>
                 <select name="status" defaultValue={editing?.status ?? "active"} className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm">
@@ -105,8 +117,7 @@ export function ClientsScreen() {
         ) : clients.length === 0 ? (
           <EmptyState title="Nenhum cliente ainda" description="Crie o primeiro cliente para começar a organizar projetos e faturamento." />
         ) : (
-          <div className="card-surface overflow-hidden !p-0">
-            <div className="overflow-x-auto">
+          <ResponsiveTable>
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-[var(--background-tertiary)] text-[var(--text-muted)]">
                 <tr>
@@ -125,8 +136,8 @@ export function ClientsScreen() {
                       <div className="text-xs text-[var(--text-muted)]">{c.company}</div>
                     </td>
                     <td className="px-5 py-3 text-[var(--text-secondary)]">{c.email || "—"}</td>
-                    <td className="px-5 py-3">{c.default_hour_rate ? `$ ${c.default_hour_rate}` : "—"}</td>
-                    <td className="px-5 py-3"><Badge tone={c.status === "active" ? "primary" : "muted"}>{c.status}</Badge></td>
+                    <td className="px-5 py-3">{c.default_hour_rate ? formatCurrency(c.default_hour_rate) : "—"}</td>
+                    <td className="px-5 py-3"><Badge tone={CLIENT_STATUS[c.status].tone}>{CLIENT_STATUS[c.status].label}</Badge></td>
                     <td className="px-5 py-3 text-right">
                       <button onClick={() => { setEditing(c); setShowForm(true); }} className="mr-2 text-xs text-[var(--secondary)] hover:underline">Editar</button>
                       <button onClick={() => onDelete(c.id)} className="text-xs text-red-400 hover:underline">Excluir</button>
@@ -135,19 +146,9 @@ export function ClientsScreen() {
                 ))}
               </tbody>
             </table>
-            </div>
-          </div>
+          </ResponsiveTable>
         )}
       </PageBody>
     </>
-  );
-}
-
-function Field({ name, label, type = "text", required, defaultValue }: { name: string; label: string; type?: string; required?: boolean; defaultValue?: string | number | null }) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">{label}{required && " *"}</label>
-      <input name={name} type={type} required={required} defaultValue={defaultValue ?? ""} className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm outline-none focus:border-primary" />
-    </div>
   );
 }

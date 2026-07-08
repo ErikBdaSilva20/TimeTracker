@@ -104,8 +104,15 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
-    // Preview mode: no gateway env → install fetch interceptor with fixtures.
-    if (!import.meta.env.VITE_GATEWAY_URL) {
+    // Preview mode: either the editor explicitly flags it via
+    // window.__MASI_PREVIEW__ (Sandpack/editor preview, injected at runtime)
+    // or there's no gateway configured at all (local dev without a gateway
+    // URL). Either case installs the fetch interceptor with fixtures instead
+    // of hitting a real backend.
+    const isPreview =
+      (window as unknown as { __MASI_PREVIEW__?: boolean }).__MASI_PREVIEW__ === true ||
+      !import.meta.env.VITE_GATEWAY_URL;
+    if (isPreview) {
       installPreviewFetch();
     }
   }, []);
