@@ -1,16 +1,17 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
-import { toast } from "sonner";
 import {
   PageBody,
   PageHeader,
   EmptyState,
+  LoadingState,
   FormField,
   ResponsiveTable,
 } from "@/components/layout/PageHeader";
 import { contactsRepo, clientsRepo, type ContactRow } from "@/lib/data";
 import { useConfirm } from "@/hooks/useConfirm";
+import { runMutation } from "@/lib/mutations";
 
 export function ContactsScreen() {
   const qc = useQueryClient();
@@ -45,23 +46,25 @@ export function ContactsScreen() {
       client_id: String(fd.get("client_id") || "") || null,
       notes: String(fd.get("notes") || "") || null,
     };
-    try {
-      if (editing) await contactsRepo.update(editing.id, payload);
-      else await contactsRepo.create(payload);
-      toast.success(editing ? "Contato atualizado" : "Contato criado");
-      setShowForm(false);
-      setEditing(null);
-      qc.invalidateQueries({ queryKey: ["contacts"] });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro");
-    }
+    await runMutation(
+      () => (editing ? contactsRepo.update(editing.id, payload) : contactsRepo.create(payload)),
+      {
+        successMessage: editing ? "Contato atualizado" : "Contato criado",
+        onSuccess: () => {
+          setShowForm(false);
+          setEditing(null);
+          qc.invalidateQueries({ queryKey: ["contacts"] });
+        },
+      },
+    );
   };
 
   const onDelete = async (id: string) => {
     if (!(await confirm("Excluir contato?"))) return;
-    await contactsRepo.remove(id);
-    qc.invalidateQueries({ queryKey: ["contacts"] });
-    toast.success("Contato excluído");
+    await runMutation(() => contactsRepo.remove(id), {
+      successMessage: "Contato excluído",
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["contacts"] }),
+    });
   };
 
   return (
@@ -163,7 +166,7 @@ export function ContactsScreen() {
         )}
 
         {contactsQ.isLoading ? (
-          <div className="card-surface">Carregando…</div>
+          <LoadingState />
         ) : contacts.length === 0 ? (
           <EmptyState
             title="Nenhum contato ainda"

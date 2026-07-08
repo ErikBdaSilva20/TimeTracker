@@ -1,4 +1,4 @@
-import { PageBody, PageHeader, StatCard } from "@/components/layout/PageHeader";
+import { LoadingState, PageBody, PageHeader, StatCard } from "@/components/layout/PageHeader";
 import { useDateBoundaries } from "@/hooks/use-date-boundaries";
 import { calculateRevenue } from "@/lib/billing";
 import {
@@ -135,6 +135,20 @@ export function AnalyticsScreen() {
     border: "1px solid var(--border)",
     borderRadius: 12,
   };
+
+  if (entriesQ.isLoading || projectsQ.isLoading || clientsQ.isLoading || membersQ.isLoading) {
+    return (
+      <>
+        <PageHeader
+          title="Analytics"
+          description="KPIs agregados calculados sobre os time entries."
+        />
+        <PageBody>
+          <LoadingState />
+        </PageBody>
+      </>
+    );
+  }
 
   return (
     <>

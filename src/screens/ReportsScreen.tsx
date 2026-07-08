@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
-import { PageBody, PageHeader, StatCard, EmptyState } from "@/components/layout/PageHeader";
 import {
-  timeEntriesRepo,
-  clientsRepo,
-  projectsRepo,
-  membersRepo,
-} from "@/lib/data";
+  PageBody,
+  PageHeader,
+  StatCard,
+  EmptyState,
+  LoadingState,
+} from "@/components/layout/PageHeader";
+import { timeEntriesRepo, clientsRepo, projectsRepo, membersRepo } from "@/lib/data";
 import { formatCurrency, formatDate, formatHours } from "@/lib/format";
 import { calculateRevenue } from "@/lib/billing";
 
@@ -133,197 +134,214 @@ export function ReportsScreen() {
         }
       />
       <PageBody>
-        <div className="card-surface grid gap-4 md:grid-cols-3 xl:grid-cols-6">
-          <FilterField label="De">
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-            />
-          </FilterField>
-          <FilterField label="Até">
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-            />
-          </FilterField>
-          <FilterField label="Cliente">
-            <select
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-            >
-              <option value="all">Todos</option>
-              {(clientsQ.data ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </FilterField>
-          <FilterField label="Projeto">
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-            >
-              <option value="all">Todos</option>
-              {(projectsQ.data ?? []).map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </FilterField>
-          <FilterField label="Membro">
-            <select
-              value={memberId}
-              onChange={(e) => setMemberId(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-            >
-              <option value="all">Todos</option>
-              {(membersQ.data ?? []).map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </FilterField>
-          <FilterField label="Faturamento">
-            <select
-              value={billableFilter}
-              onChange={(e) => setBillableFilter(e.target.value as typeof billableFilter)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-            >
-              <option value="all">Todos</option>
-              <option value="billable">Faturáveis</option>
-              <option value="nonbillable">Não faturáveis</option>
-            </select>
-          </FilterField>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <StatCard label="Total" value={formatHours(totals.minutes)} hint={`${totals.count} registros`} accent="primary" />
-          <StatCard label="Faturáveis" value={formatHours(totals.billableMin)} accent="secondary" />
-          <StatCard
-            label="% faturável"
-            value={`${totals.minutes ? Math.round((totals.billableMin / totals.minutes) * 100) : 0}%`}
-          />
-          <StatCard label="Receita" value={formatCurrency(totals.revenue)} accent="primary" />
-        </div>
-
-        <div className="card-surface">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-base font-semibold">Agrupamento</h3>
-            <div className="flex gap-1">
-              {(["project", "client", "member", "task"] as GroupBy[]).map((g) => (
-                <button
-                  key={g}
-                  onClick={() => setGroupBy(g)}
-                  className={`rounded-lg border px-3 py-1.5 text-xs capitalize ${
-                    groupBy === g
-                      ? "border-primary bg-[var(--primary-soft)] text-primary"
-                      : "border-[var(--border)] text-[var(--text-secondary)]"
-                  }`}
+        {entriesQ.isLoading ? (
+          <LoadingState />
+        ) : (
+          <>
+            <div className="card-surface grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+              <FilterField label="De">
+                <input
+                  type="date"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+                />
+              </FilterField>
+              <FilterField label="Até">
+                <input
+                  type="date"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+                />
+              </FilterField>
+              <FilterField label="Cliente">
+                <select
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
                 >
-                  {g}
-                </button>
-              ))}
+                  <option value="all">Todos</option>
+                  {(clientsQ.data ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+              <FilterField label="Projeto">
+                <select
+                  value={projectId}
+                  onChange={(e) => setProjectId(e.target.value)}
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+                >
+                  <option value="all">Todos</option>
+                  {(projectsQ.data ?? []).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+              <FilterField label="Membro">
+                <select
+                  value={memberId}
+                  onChange={(e) => setMemberId(e.target.value)}
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+                >
+                  <option value="all">Todos</option>
+                  {(membersQ.data ?? []).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+              <FilterField label="Faturamento">
+                <select
+                  value={billableFilter}
+                  onChange={(e) => setBillableFilter(e.target.value as typeof billableFilter)}
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+                >
+                  <option value="all">Todos</option>
+                  <option value="billable">Faturáveis</option>
+                  <option value="nonbillable">Não faturáveis</option>
+                </select>
+              </FilterField>
             </div>
-          </div>
-          {grouped.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">Sem dados no filtro selecionado.</p>
-          ) : (
-            <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead className="text-[var(--text-muted)]">
-                <tr className="text-left text-xs uppercase tracking-widest">
-                  <th className="py-2 font-medium">{groupBy}</th>
-                  <th className="py-2 font-medium">Registros</th>
-                  <th className="py-2 font-medium">Horas</th>
-                  <th className="py-2 font-medium">Receita</th>
-                  <th className="py-2 font-medium">Distribuição</th>
-                </tr>
-              </thead>
-              <tbody>
-                {grouped.map((row) => {
-                  const pct = totals.minutes ? (row.minutes / totals.minutes) * 100 : 0;
-                  return (
-                    <tr key={row.key} className="border-t border-[var(--border)]">
-                      <td className="py-3 font-medium">{row.label}</td>
-                      <td className="py-3 text-[var(--text-secondary)]">{row.count}</td>
-                      <td className="py-3">{formatHours(row.minutes)}</td>
-                      <td className="py-3">{formatCurrency(row.revenue)}</td>
-                      <td className="py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-32 rounded-full bg-[var(--surface-hover)]">
-                            <div
-                              className="h-full rounded-full bg-primary"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-[var(--text-muted)]">
-                            {pct.toFixed(0)}%
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            </div>
-          )}
-        </div>
 
-        <div className="card-surface">
-          <h3 className="mb-4 text-base font-semibold">Registros</h3>
-          {filtered.length === 0 ? (
-            <EmptyState title="Sem registros" description="Ajuste os filtros para ver dados." />
-          ) : (
-            <div className="max-h-[420px] overflow-auto">
-              <table className="w-full min-w-[640px] text-sm">
-                <thead className="sticky top-0 bg-[var(--background-tertiary)] text-xs uppercase tracking-widest text-[var(--text-muted)]">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium">Data</th>
-                    <th className="px-3 py-2 text-left font-medium">Cliente / Projeto</th>
-                    <th className="px-3 py-2 text-left font-medium">Task</th>
-                    <th className="px-3 py-2 text-left font-medium">Membro</th>
-                    <th className="px-3 py-2 text-left font-medium">Horas</th>
-                    <th className="px-3 py-2 text-left font-medium">Fatur.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered
-                    .slice()
-                    .sort((a, b) => (a.date < b.date ? 1 : -1))
-                    .map((e) => (
-                      <tr key={e.id} className="border-t border-[var(--border)]">
-                        <td className="px-3 py-2">{formatDate(e.date)}</td>
-                        <td className="px-3 py-2">
-                          <div className="font-medium">{e.project_name || "—"}</div>
-                          <div className="text-xs text-[var(--text-muted)]">{e.client_name}</div>
-                        </td>
-                        <td className="px-3 py-2 text-[var(--text-secondary)]">
-                          {e.task_name || "—"}
-                        </td>
-                        <td className="px-3 py-2 text-[var(--text-secondary)]">
-                          {e.member_name || "—"}
-                        </td>
-                        <td className="px-3 py-2">{formatHours(e.duration_minutes)}</td>
-                        <td className="px-3 py-2 text-xs">
-                          {e.billable ? formatCurrency(calculateRevenue(e)) : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <StatCard
+                label="Total"
+                value={formatHours(totals.minutes)}
+                hint={`${totals.count} registros`}
+                accent="primary"
+              />
+              <StatCard
+                label="Faturáveis"
+                value={formatHours(totals.billableMin)}
+                accent="secondary"
+              />
+              <StatCard
+                label="% faturável"
+                value={`${totals.minutes ? Math.round((totals.billableMin / totals.minutes) * 100) : 0}%`}
+              />
+              <StatCard label="Receita" value={formatCurrency(totals.revenue)} accent="primary" />
             </div>
-          )}
-        </div>
+
+            <div className="card-surface">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-base font-semibold">Agrupamento</h3>
+                <div className="flex gap-1">
+                  {(["project", "client", "member", "task"] as GroupBy[]).map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setGroupBy(g)}
+                      className={`rounded-lg border px-3 py-1.5 text-xs capitalize ${
+                        groupBy === g
+                          ? "border-primary bg-[var(--primary-soft)] text-primary"
+                          : "border-[var(--border)] text-[var(--text-secondary)]"
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {grouped.length === 0 ? (
+                <p className="text-sm text-[var(--text-muted)]">Sem dados no filtro selecionado.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-sm">
+                    <thead className="text-[var(--text-muted)]">
+                      <tr className="text-left text-xs uppercase tracking-widest">
+                        <th className="py-2 font-medium">{groupBy}</th>
+                        <th className="py-2 font-medium">Registros</th>
+                        <th className="py-2 font-medium">Horas</th>
+                        <th className="py-2 font-medium">Receita</th>
+                        <th className="py-2 font-medium">Distribuição</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {grouped.map((row) => {
+                        const pct = totals.minutes ? (row.minutes / totals.minutes) * 100 : 0;
+                        return (
+                          <tr key={row.key} className="border-t border-[var(--border)]">
+                            <td className="py-3 font-medium">{row.label}</td>
+                            <td className="py-3 text-[var(--text-secondary)]">{row.count}</td>
+                            <td className="py-3">{formatHours(row.minutes)}</td>
+                            <td className="py-3">{formatCurrency(row.revenue)}</td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="h-1.5 w-32 rounded-full bg-[var(--surface-hover)]">
+                                  <div
+                                    className="h-full rounded-full bg-primary"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-[var(--text-muted)]">
+                                  {pct.toFixed(0)}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="card-surface">
+              <h3 className="mb-4 text-base font-semibold">Registros</h3>
+              {filtered.length === 0 ? (
+                <EmptyState title="Sem registros" description="Ajuste os filtros para ver dados." />
+              ) : (
+                <div className="max-h-[420px] overflow-auto">
+                  <table className="w-full min-w-[640px] text-sm">
+                    <thead className="sticky top-0 bg-[var(--background-tertiary)] text-xs uppercase tracking-widest text-[var(--text-muted)]">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium">Data</th>
+                        <th className="px-3 py-2 text-left font-medium">Cliente / Projeto</th>
+                        <th className="px-3 py-2 text-left font-medium">Task</th>
+                        <th className="px-3 py-2 text-left font-medium">Membro</th>
+                        <th className="px-3 py-2 text-left font-medium">Horas</th>
+                        <th className="px-3 py-2 text-left font-medium">Fatur.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered
+                        .slice()
+                        .sort((a, b) => (a.date < b.date ? 1 : -1))
+                        .map((e) => (
+                          <tr key={e.id} className="border-t border-[var(--border)]">
+                            <td className="px-3 py-2">{formatDate(e.date)}</td>
+                            <td className="px-3 py-2">
+                              <div className="font-medium">{e.project_name || "—"}</div>
+                              <div className="text-xs text-[var(--text-muted)]">
+                                {e.client_name}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-[var(--text-secondary)]">
+                              {e.task_name || "—"}
+                            </td>
+                            <td className="px-3 py-2 text-[var(--text-secondary)]">
+                              {e.member_name || "—"}
+                            </td>
+                            <td className="px-3 py-2">{formatHours(e.duration_minutes)}</td>
+                            <td className="px-3 py-2 text-xs">
+                              {e.billable ? formatCurrency(calculateRevenue(e)) : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </PageBody>
     </>
   );

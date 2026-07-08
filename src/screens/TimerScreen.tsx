@@ -11,6 +11,7 @@ import {
   type TimeEntryRow,
 } from "@/lib/data";
 import { formatDuration } from "@/lib/format";
+import { runMutation } from "@/lib/mutations";
 import { useTimerSession } from "@/hooks/use-timer-session";
 
 export function TimerScreen() {
@@ -75,9 +76,10 @@ export function TimerScreen() {
       hour_rate: project?.hourly_rate ?? null,
       currency: "BRL",
     };
-    await timeEntriesRepo.create(payload);
-    qc.invalidateQueries({ queryKey: ["time_entries"] });
-    toast.success("Registro salvo");
+    await runMutation(() => timeEntriesRepo.create(payload), {
+      successMessage: "Registro salvo",
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["time_entries"] }),
+    });
   };
 
   return (

@@ -1,11 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { FileText, Plus } from "lucide-react";
-import { toast } from "sonner";
 import {
   PageBody,
   PageHeader,
   EmptyState,
+  LoadingState,
   StatCard,
   Badge,
   ResponsiveTable,
@@ -15,6 +15,7 @@ import { formatCurrency, formatDate, formatHours } from "@/lib/format";
 import { calculateRevenue } from "@/lib/billing";
 import { INVOICE_STATUS } from "@/lib/domain";
 import { useConfirm } from "@/hooks/useConfirm";
+import { runMutation } from "@/lib/mutations";
 
 export function InvoicesScreen() {
   const qc = useQueryClient();
@@ -72,26 +73,27 @@ export function InvoicesScreen() {
       status: (fd.get("status") as InvoiceRow["status"]) || "draft",
       issued_at: new Date().toISOString(),
     };
-    try {
-      await invoicesRepo.create(payload);
-      toast.success(`Fatura criada com ${entries.length} entrada(s)`);
-      setShowForm(false);
-      qc.invalidateQueries({ queryKey: ["invoices"] });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro");
-    }
+    await runMutation(() => invoicesRepo.create(payload), {
+      successMessage: `Fatura criada com ${entries.length} entrada(s)`,
+      onSuccess: () => {
+        setShowForm(false);
+        qc.invalidateQueries({ queryKey: ["invoices"] });
+      },
+    });
   };
 
   const changeStatus = async (id: string, status: InvoiceRow["status"]) => {
-    await invoicesRepo.update(id, { status });
-    qc.invalidateQueries({ queryKey: ["invoices"] });
+    await runMutation(() => invoicesRepo.update(id, { status }), {
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),
+    });
   };
 
   const onDelete = async (id: string) => {
     if (!(await confirm("Excluir fatura?"))) return;
-    await invoicesRepo.remove(id);
-    qc.invalidateQueries({ queryKey: ["invoices"] });
-    toast.success("Fatura excluída");
+    await runMutation(() => invoicesRepo.remove(id), {
+      successMessage: "Fatura excluída",
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),
+    });
   };
 
   return (
@@ -219,7 +221,7 @@ export function InvoicesScreen() {
         )}
 
         {invoicesQ.isLoading ? (
-          <div className="card-surface">Carregando…</div>
+          <LoadingState />
         ) : invoices.length === 0 ? (
           <EmptyState
             title="Nenhuma fatura"
@@ -260,14 +262,14 @@ export function InvoicesScreen() {
                     <td className="px-5 py-3 text-xs text-[var(--text-secondary)]">
                       {formatDate(i.period_start)} → {formatDate(i.period_end)}
                     </td>
-                    <td className="px-5 py-3">{formatHours(Math.round((i.total_hours || 0) * 60))}</td>
+                    <td className="px-5 py-3">
+                      {formatHours(Math.round((i.total_hours || 0) * 60))}
+                    </td>
                     <td className="px-5 py-3 font-medium">{formatCurrency(i.total_amount || 0)}</td>
                     <td className="px-5 py-3">
                       <select
                         value={i.status}
-                        onChange={(e) =>
-                          changeStatus(i.id, e.target.value as InvoiceRow["status"])
-                        }
+                        onChange={(e) => changeStatus(i.id, e.target.value as InvoiceRow["status"])}
                         className="rounded-md border-0 bg-transparent p-0 text-xs"
                       >
                         {(Object.keys(INVOICE_STATUS) as InvoiceRow["status"][]).map((s) => (
@@ -277,7 +279,9 @@ export function InvoicesScreen() {
                         ))}
                       </select>
                       <div className="mt-1">
-                        <Badge tone={INVOICE_STATUS[i.status].tone}>{INVOICE_STATUS[i.status].label}</Badge>
+                        <Badge tone={INVOICE_STATUS[i.status].tone}>
+                          {INVOICE_STATUS[i.status].label}
+                        </Badge>
                       </div>
                     </td>
                     <td className="px-5 py-3 text-right">

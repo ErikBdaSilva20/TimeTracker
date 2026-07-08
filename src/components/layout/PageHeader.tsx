@@ -82,15 +82,27 @@ export function EmptyState({
   );
 }
 
+/**
+ * LoadingState
+ * ---
+ * Padrão para o estado de carregamento de qualquer `useQuery` de tela —
+ * antes cada tela reimplementava um `<div className="card-surface">
+ * Carregando…</div>` ad-hoc (ou, em Dashboard/Analytics/Calendar/Reports,
+ * não mostrava nenhum estado de loading e renderizava KPIs derivados de
+ * array vazio até os dados chegarem).
+ */
+export function LoadingState({ label = "Carregando…" }: { label?: string }) {
+  return (
+    <div className="card-surface flex items-center justify-center gap-2.5 py-12 text-sm text-[var(--text-muted)] sm:py-16">
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border)] border-t-primary" />
+      {label}
+    </div>
+  );
+}
+
 export type BadgeTone = "primary" | "secondary" | "muted" | "danger";
 
-export function Badge({
-  children,
-  tone = "muted",
-}: {
-  children: ReactNode;
-  tone?: BadgeTone;
-}) {
+export function Badge({ children, tone = "muted" }: { children: ReactNode; tone?: BadgeTone }) {
   const styles =
     tone === "primary"
       ? "bg-[var(--primary-soft)] text-primary border-[var(--primary-soft)]"

@@ -93,6 +93,7 @@
       "src/lib/format.ts",
       "src/lib/billing.ts",
       "src/lib/domain.ts",
+      "src/lib/mutations.ts",
       "src/lib/timer-session.ts",
       "src/styles.css"
     ],

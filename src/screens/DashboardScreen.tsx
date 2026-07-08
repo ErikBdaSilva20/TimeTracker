@@ -1,4 +1,4 @@
-import { PageBody, PageHeader, StatCard } from "@/components/layout/PageHeader";
+import { LoadingState, PageBody, PageHeader, StatCard } from "@/components/layout/PageHeader";
 import { useDateBoundaries } from "@/hooks/use-date-boundaries";
 import { calculateRevenue } from "@/lib/billing";
 import { projectsRepo, timeEntriesRepo, type ProjectRow, type TimeEntryRow } from "@/lib/data";
@@ -66,6 +66,17 @@ export function DashboardScreen() {
     () => [...entries].sort((a, b) => (a.created_at < b.created_at ? 1 : -1)).slice(0, 8),
     [entries],
   );
+
+  if (entriesQ.isLoading || projectsQ.isLoading) {
+    return (
+      <>
+        <PageHeader title="Dashboard" description="Panorama do seu tempo, projetos e receita." />
+        <PageBody>
+          <LoadingState />
+        </PageBody>
+      </>
+    );
+  }
 
   return (
     <>

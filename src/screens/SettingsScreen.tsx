@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { PageBody, PageHeader, FormField } from "@/components/layout/PageHeader";
+import { PageBody, PageHeader, FormField, LoadingState } from "@/components/layout/PageHeader";
 import { settingsRepo, type SettingsRow } from "@/lib/data";
+import { runMutation } from "@/lib/mutations";
 
 // Weekday numbering follows JS Date#getDay() (0 = domingo … 6 = sábado), the
 // same convention already used by the preview seed data (workdays: [1..5]).
@@ -55,14 +55,13 @@ export function SettingsScreen() {
       date_format: String(fd.get("date_format") || "dd/MM/yyyy"),
       workdays,
     };
-    try {
-      if (existing) await settingsRepo.update(existing.id, payload);
-      else await settingsRepo.create(payload);
-      toast.success("Configurações salvas");
-      qc.invalidateQueries({ queryKey: ["settings"] });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro");
-    }
+    await runMutation(
+      () => (existing ? settingsRepo.update(existing.id, payload) : settingsRepo.create(payload)),
+      {
+        successMessage: "Configurações salvas",
+        onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
+      },
+    );
   };
 
   return (
@@ -70,7 +69,7 @@ export function SettingsScreen() {
       <PageHeader title="Configurações" description="Preferências gerais da sua conta." />
       <PageBody>
         {q.isLoading ? (
-          <div className="card-surface">Carregando…</div>
+          <LoadingState />
         ) : (
           <form onSubmit={onSubmit} className="card-surface max-w-2xl space-y-5">
             <div>

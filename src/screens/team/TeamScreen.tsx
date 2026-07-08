@@ -1,15 +1,32 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Briefcase, Circle, Clock, Download, Palmtree, Plus, Search, Users, X } from "lucide-react";
-import { toast } from "sonner";
+import {
+  AlertTriangle,
+  Briefcase,
+  Circle,
+  Clock,
+  Download,
+  Palmtree,
+  Plus,
+  Search,
+  Users,
+  X,
+} from "lucide-react";
 import { AnimatedParticles } from "@/components/AnimatedParticles";
-import { EmptyState, FormField, PageBody } from "@/components/layout/PageHeader";
+import { EmptyState, FormField, LoadingState, PageBody } from "@/components/layout/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useDateBoundaries } from "@/hooks/use-date-boundaries";
 import { useConfirm } from "@/hooks/useConfirm";
-import { membersRepo, projectsRepo, timeEntriesRepo, type MemberRow, type TimeEntryRow } from "@/lib/data";
+import {
+  membersRepo,
+  projectsRepo,
+  timeEntriesRepo,
+  type MemberRow,
+  type TimeEntryRow,
+} from "@/lib/data";
 import { emptyArray } from "@/lib/empty";
 import { formatCurrency, formatHours } from "@/lib/format";
+import { runMutation } from "@/lib/mutations";
 import { KpiCard } from "./components/kpi-card";
 import { MemberCard } from "./components/member-card";
 import { MemberList } from "./components/member-list";
@@ -87,24 +104,28 @@ export function TeamScreen() {
       weekly_goal: Number(fd.get("weekly_goal")) || null,
       active: fd.get("active") === "on",
     };
-    try {
-      if (editing) await membersRepo.update(editing.id, payload);
-      else await membersRepo.create(payload);
-      toast.success(editing ? "Membro atualizado" : "Membro criado");
-      setShowForm(false);
-      setEditing(null);
-      qc.invalidateQueries({ queryKey: ["members"] });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro");
-    }
+    await runMutation(
+      () => (editing ? membersRepo.update(editing.id, payload) : membersRepo.create(payload)),
+      {
+        successMessage: editing ? "Membro atualizado" : "Membro criado",
+        onSuccess: () => {
+          setShowForm(false);
+          setEditing(null);
+          qc.invalidateQueries({ queryKey: ["members"] });
+        },
+      },
+    );
   };
 
   const onDelete = async (id: string) => {
     if (!(await confirm("Excluir membro?"))) return;
-    await membersRepo.remove(id);
-    if (selectedId === id) setSelectedId(null);
-    qc.invalidateQueries({ queryKey: ["members"] });
-    toast.success("Membro excluído");
+    await runMutation(() => membersRepo.remove(id), {
+      successMessage: "Membro excluído",
+      onSuccess: () => {
+        if (selectedId === id) setSelectedId(null);
+        qc.invalidateQueries({ queryKey: ["members"] });
+      },
+    });
   };
 
   const exportCSV = () => {
@@ -279,7 +300,7 @@ export function TeamScreen() {
         >
           <div>
             {membersQ.isLoading ? (
-              <div className="card-surface">Carregando…</div>
+              <LoadingState />
             ) : filtered.length === 0 ? (
               <EmptyState
                 title="Nenhum membro"
