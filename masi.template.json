@@ -64,7 +64,12 @@
       "title": "Analytics",
       "file": "src/screens/AnalyticsScreen"
     },
-    { "id": "team", "route": "/team", "title": "Equipe", "file": "src/screens/TeamScreen" },
+    {
+      "id": "team",
+      "route": "/team",
+      "title": "Equipe",
+      "file": "src/screens/team/TeamScreen"
+    },
     {
       "id": "settings",
       "route": "/settings",
