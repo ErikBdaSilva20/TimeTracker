@@ -1,5 +1,17 @@
-import { useMemo } from "react";
+import { PageBody, PageHeader, StatCard } from "@/components/layout/PageHeader";
+import { useDateBoundaries } from "@/hooks/use-date-boundaries";
+import { calculateRevenue } from "@/lib/billing";
+import {
+  clientsRepo,
+  membersRepo,
+  projectsRepo,
+  timeEntriesRepo,
+  type TimeEntryRow,
+} from "@/lib/data";
+import { emptyArray } from "@/lib/empty";
+import { formatCurrency, formatHours } from "@/lib/format";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -14,10 +26,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { PageBody, PageHeader, StatCard } from "@/components/layout/PageHeader";
-import { timeEntriesRepo, projectsRepo, clientsRepo, membersRepo } from "@/lib/data";
-import { formatCurrency, formatHours } from "@/lib/format";
-import { calculateRevenue } from "@/lib/billing";
 
 const PIE_COLORS = [
   "var(--primary)",
@@ -35,12 +43,9 @@ export function AnalyticsScreen() {
   const clientsQ = useQuery({ queryKey: ["clients"], queryFn: () => clientsRepo.list() });
   const membersQ = useQuery({ queryKey: ["members"], queryFn: () => membersRepo.list() });
 
-  const entries = entriesQ.data ?? [];
+  const entries = entriesQ.data ?? emptyArray<TimeEntryRow>();
 
-  const today = new Date();
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-  const prevMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+  const { now: today, monthStart, prevMonthStart, prevMonthEnd } = useDateBoundaries();
 
   const kpis = useMemo(() => {
     const currMonth = entries.filter((e) => new Date(e.date) >= monthStart);
@@ -53,7 +58,9 @@ export function AnalyticsScreen() {
     const prev = sumMin(prevMonth);
     const currRev = sumRev(currMonth);
     const prevRev = sumRev(prevMonth);
-    const billableMin = currMonth.filter((e) => e.billable).reduce((a, e) => a + e.duration_minutes, 0);
+    const billableMin = currMonth
+      .filter((e) => e.billable)
+      .reduce((a, e) => a + e.duration_minutes, 0);
     return {
       currHours: curr,
       prevHours: prev,
@@ -116,7 +123,11 @@ export function AnalyticsScreen() {
     return Array.from(map.values())
       .sort((a, b) => b.hours - a.hours)
       .slice(0, 8)
-      .map((r) => ({ name: r.name, hours: +(r.hours / 60).toFixed(1), revenue: +r.revenue.toFixed(0) }));
+      .map((r) => ({
+        name: r.name,
+        hours: +(r.hours / 60).toFixed(1),
+        revenue: +r.revenue.toFixed(0),
+      }));
   }, [entries]);
 
   const tooltipStyle = {
