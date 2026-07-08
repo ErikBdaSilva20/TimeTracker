@@ -94,6 +94,8 @@ export interface TimerSessionRow extends Timestamps {
   started_at: string | null;
   paused_at: string | null;
   status: TimerStatus;
+  /** Seconds banked from prior running segments, excluding the one in progress. */
+  accumulated_seconds: number;
 }
 
 export interface TimeEntryRow extends Timestamps {
