@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { startOfMonth } from "date-fns";
-import { PageBody, PageHeader, Badge } from "@/components/layout/PageHeader";
-import { timeEntriesRepo } from "@/lib/data";
+import { Badge, PageBody, PageHeader } from "@/components/layout/PageHeader";
+import { timeEntriesRepo, type TimeEntryRow } from "@/lib/data";
+import { emptyArray } from "@/lib/empty";
 import { formatHours } from "@/lib/format";
+import { useQuery } from "@tanstack/react-query";
+import { startOfMonth } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
 
 function addMonths(d: Date, n: number) {
   return new Date(d.getFullYear(), d.getMonth() + n, 1);
@@ -19,7 +20,7 @@ export function CalendarScreen() {
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()));
   const [selected, setSelected] = useState<string>(isoDate(new Date()));
   const entriesQ = useQuery({ queryKey: ["time_entries"], queryFn: () => timeEntriesRepo.list() });
-  const entries = entriesQ.data ?? [];
+  const entries = entriesQ.data ?? emptyArray<TimeEntryRow>();
 
   const monthLabel = cursor.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
@@ -121,9 +122,7 @@ export function CalendarScreen() {
                         {c.date.getDate()}
                       </span>
                       {info && (
-                        <span className="text-[10px] text-[var(--text-muted)]">
-                          {info.count}
-                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)]">{info.count}</span>
                       )}
                     </div>
                     {info && (
@@ -165,10 +164,7 @@ export function CalendarScreen() {
             ) : (
               <div className="space-y-2">
                 {dayEntries.map((e) => (
-                  <div
-                    key={e.id}
-                    className="rounded-xl border border-[var(--border)] p-3 text-sm"
-                  >
+                  <div key={e.id} className="rounded-xl border border-[var(--border)] p-3 text-sm">
                     <div className="flex items-center justify-between">
                       <div className="font-medium">{e.project_name || "—"}</div>
                       <div className="text-xs text-[var(--text-muted)]">
@@ -179,9 +175,7 @@ export function CalendarScreen() {
                       {e.client_name} · {e.task_name} · {e.member_name}
                     </div>
                     {e.notes && (
-                      <div className="mt-2 text-xs text-[var(--text-secondary)]">
-                        {e.notes}
-                      </div>
+                      <div className="mt-2 text-xs text-[var(--text-secondary)]">{e.notes}</div>
                     )}
                   </div>
                 ))}
