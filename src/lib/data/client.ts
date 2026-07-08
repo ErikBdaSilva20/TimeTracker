@@ -1,15 +1,17 @@
 // PROTECTED — contract with the MasIA tenant-gateway. Do not edit as app code.
-const params = new URLSearchParams(
-  typeof window !== "undefined" ? window.location.search : "",
-);
+const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
 const GW =
   params.get("gw") ||
   import.meta.env.VITE_GATEWAY_URL ||
-  (typeof window !== "undefined" ? (window as unknown as { __MASI_GW__?: string }).__MASI_GW__ : "") ||
+  (typeof window !== "undefined"
+    ? (window as unknown as { __MASI_GW__?: string }).__MASI_GW__
+    : "") ||
   "";
 const TENANT =
   params.get("t") ||
-  (typeof window !== "undefined" ? (window as unknown as { __MASI_TENANT__?: string }).__MASI_TENANT__ : "") ||
+  (typeof window !== "undefined"
+    ? (window as unknown as { __MASI_TENANT__?: string }).__MASI_TENANT__
+    : "") ||
   "";
 
 async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -28,8 +30,7 @@ export const db = {
     return {
       list: () => api<R[]>("GET", `/data/${name}`),
       create: (input: Partial<R>) => api<R>("POST", `/data/${name}`, input),
-      update: (id: string, patch: Partial<R>) =>
-        api<R>("PATCH", `/data/${name}/${id}`, patch),
+      update: (id: string, patch: Partial<R>) => api<R>("PATCH", `/data/${name}/${id}`, patch),
       remove: (id: string) => api<void>("DELETE", `/data/${name}/${id}`),
     };
   },

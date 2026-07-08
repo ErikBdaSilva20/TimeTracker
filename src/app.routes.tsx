@@ -1,9 +1,9 @@
-import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
-import { RequireAuth, RequireRole } from "@/lib/auth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { LoadingState } from "@/components/layout/PageHeader";
 import { NotFound } from "@/components/NotFound";
+import { RequireAuth, RequireRole } from "@/lib/auth";
+import { lazy, Suspense } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 // Um import() por tela — mantém o code-splitting por rota que o
 // autoCodeSplitting do TanStack Router dava antes da migração (achado 3.3),
