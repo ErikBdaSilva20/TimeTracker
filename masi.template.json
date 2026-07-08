@@ -85,8 +85,6 @@
   "editable": {
     "allow": [
       "src/screens/**",
-      "src/routes/_app.*.tsx",
-      "src/routes/login.tsx",
       "src/components/**",
       "src/hooks/**",
       "src/lib/data/*.repo.ts",
@@ -108,13 +106,10 @@
       "preview-fixtures.ts",
       "supabase/migrations/**",
       "vite.config.ts",
-      "src/server.ts",
-      "src/start.ts",
-      "src/router.tsx",
-      "src/routeTree.gen.ts",
-      "src/routes/__root.tsx",
-      "src/routes/_app.tsx",
-      "src/routes/index.tsx"
+      "index.html",
+      "src/main.tsx",
+      "src/App.tsx",
+      "src/app.routes.tsx"
     ]
   },
   "composio": { "toolkits": [] },
