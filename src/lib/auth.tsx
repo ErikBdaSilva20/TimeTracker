@@ -77,3 +77,23 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
+
+/**
+ * Gates a route behind a minimum role. The real authorization boundary is
+ * always the gateway (`owner_id`) — this is a second, UI-level guard so a
+ * `rep` can't reach manager-only screens (team/reports/analytics/settings)
+ * by navigating to the URL directly, even if the sidebar already hides the
+ * link (audit 5.1).
+ */
+export function RequireRole({ min, children }: { min: Role; children: ReactNode }) {
+  const { role, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+  if (!roleAtLeast(role, min)) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}

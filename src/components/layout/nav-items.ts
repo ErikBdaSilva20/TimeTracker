@@ -9,9 +9,11 @@ import {
   ListChecks,
   PieChart,
   Play,
+  Settings,
   Timer,
   Users,
 } from "lucide-react";
+import type { Role } from "@/lib/data/client";
 
 /**
  * Estrutura de navegação do sidebar.
@@ -22,6 +24,8 @@ export type NavItem = {
   to: string;
   label: string;
   icon: typeof Timer;
+  /** Omite o item do menu (e a rota redireciona) abaixo deste papel — ver RequireRole. */
+  minRole?: Role;
 };
 
 export type NavGroup = {
@@ -52,12 +56,15 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Financeiro",
     items: [
       { to: "/invoices", label: "Invoices", icon: FileText },
-      { to: "/reports", label: "Relatórios", icon: BarChart3 },
-      { to: "/analytics", label: "Analytics", icon: PieChart },
+      { to: "/reports", label: "Relatórios", icon: BarChart3, minRole: "manager" },
+      { to: "/analytics", label: "Analytics", icon: PieChart, minRole: "manager" },
     ],
   },
   {
     label: "Equipe",
-    items: [{ to: "/team", label: "Members", icon: Users }],
+    items: [
+      { to: "/team", label: "Members", icon: Users, minRole: "manager" },
+      { to: "/settings", label: "Configurações", icon: Settings, minRole: "manager" },
+    ],
   },
 ];

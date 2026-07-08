@@ -1,5 +1,5 @@
 import { useClickOutside } from "@/hooks/use-click-outside";
-import { useAuth } from "@/lib/auth";
+import { roleAtLeast, useAuth } from "@/lib/auth";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LogOut, Timer, X } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -23,9 +23,17 @@ import { useSidebar } from "./sidebar-context";
  */
 export function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { user, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
   const { open, isDesktop, close } = useSidebar();
   const asideRef = useRef<HTMLElement>(null);
+
+  // Esconde itens que exigem papel mais alto que o do usuário logado — a
+  // rota em si também redireciona (RequireRole), isto é só a UI ficando
+  // coerente com o que o usuário pode de fato acessar (audit 5.1).
+  const visibleGroups = NAV_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((it) => !it.minRole || roleAtLeast(role, it.minRole)),
+  })).filter((g) => g.items.length > 0);
 
   // No desktop, `open` significa expandido vs. colapsado (icon-only).
   const collapsed = isDesktop && !open;
@@ -92,7 +100,7 @@ export function Sidebar() {
 
       {/* ─── Navegação ────────────────────────────────────────────────────── */}
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-6">
-        {NAV_GROUPS.map((g) => (
+        {visibleGroups.map((g) => (
           <div key={g.label}>
             {!collapsed && (
               <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
