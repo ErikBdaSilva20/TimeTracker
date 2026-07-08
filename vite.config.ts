@@ -1,24 +1,13 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - tanstackStart, viteReact, tailwindcss, tsConfigPaths, nitro (build-only using cloudflare as a default target),
-//     componentTagger (dev-only), VITE_* env injection, @ path alias, React/TanStack dedupe,
-//     error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
-// If `npm run build` fails with "EPERM: operation not permitted, rename
-// '.tanstack/tmp/...' -> 'src/routeTree.gen.ts'": the TanStack Start route
-// generator left a stale temp file from a previously interrupted build
-// (Ctrl+C mid-generation, AV briefly locking the file, etc). That partial
-// generation also skips populating globalThis.TSS_ROUTES_MANIFEST, which
-// then crashes the SSR manifest plugin with "Cannot convert undefined or
-// null to object". `npm run build` now runs `npm run clean` first
-// (see package.json `prebuild`) to wipe `.tanstack`/`.output` defensively —
-// if it still happens, delete `.tanstack` by hand and rebuild.
 export default defineConfig({
-  tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
-  },
+  plugins: [react(), tailwindcss()],
+  resolve: { tsconfigPaths: true },
+  // Vite usa PostCSS em dev e só roda Lightning CSS no build por padrão — isso
+  // fazia transforms exclusivos do build (ex.: colapsar `-webkit-backdrop-filter`
+  // pra forma prefixada que o Chrome ignora) divergirem do preview em dev.
+  // Rodar Lightning CSS nos dois mantém o preview fiel ao output real.
+  css: { transformer: "lightningcss" },
 });

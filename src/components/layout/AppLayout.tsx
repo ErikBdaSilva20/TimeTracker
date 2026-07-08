@@ -1,5 +1,5 @@
 import { useTheme } from "@/lib/theme";
-import { Outlet } from "@tanstack/react-router";
+import { Outlet } from "react-router-dom";
 import { Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { SidebarProvider, useSidebar } from "./sidebar-context";

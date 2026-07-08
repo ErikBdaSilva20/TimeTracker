@@ -1,6 +1,6 @@
 // PROTECTED — auth wrapper over the MasIA gateway. Do not edit as app code.
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Navigate } from "@tanstack/react-router";
+import { Navigate } from "react-router-dom";
 import { auth, type Me, type Role } from "./data/client";
 
 interface AuthContextValue extends Me {

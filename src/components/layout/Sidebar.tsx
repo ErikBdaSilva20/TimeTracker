@@ -1,6 +1,6 @@
 import { useClickOutside } from "@/hooks/use-click-outside";
 import { roleAtLeast, useAuth } from "@/lib/auth";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useLocation } from "react-router-dom";
 import { LogOut, Timer, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { NAV_GROUPS } from "./nav-items";
@@ -18,11 +18,11 @@ import { useSidebar } from "./sidebar-context";
  *    desenhado pelo `AppLayout`; aqui apenas escutamos click-outside e Esc
  *    para fechar automaticamente.
  *
- * A navegação (`Link` do TanStack Router) fecha o drawer no mobile ao mudar
+ * A navegação (`Link` do react-router-dom) fecha o drawer no mobile ao mudar
  * de rota, evitando que o usuário precise fechar manualmente.
  */
 export function Sidebar() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useLocation().pathname;
   const { user, role, signOut } = useAuth();
   const { open, isDesktop, close } = useSidebar();
   const asideRef = useRef<HTMLElement>(null);

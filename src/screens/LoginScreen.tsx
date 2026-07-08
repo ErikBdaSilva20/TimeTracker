@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
 import { toast } from "sonner";
@@ -20,7 +20,7 @@ export function LoginScreen() {
   const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/dashboard" });
+    if (!loading && user) navigate("/dashboard");
   }, [loading, user, navigate]);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export function LoginScreen() {
       if (mode === "in") await signIn(email, password);
       else await signUp(email, password, name);
       toast.success("Bem-vindo(a) ao TimeFlow");
-      navigate({ to: "/dashboard" });
+      navigate("/dashboard");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao autenticar");
     } finally {
