@@ -205,14 +205,14 @@ function seed(): Store {
         task_name: t.name,
         member_name: m.name,
         hour_rate: p.hourly_rate ?? 150,
-        currency: "USD",
+        currency: "BRL",
       }),
     );
   }
 
   const settings: Row[] = [
     stamp({
-      currency: "USD",
+      currency: "BRL",
       timezone: "America/Sao_Paulo",
       default_hour_rate: 150,
       workdays: [1, 2, 3, 4, 5],
