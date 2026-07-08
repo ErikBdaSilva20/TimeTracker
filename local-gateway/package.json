@@ -1,0 +1,13 @@
+{
+  "name": "masia-local-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Gateway local (dev) que implementa o contrato /data e /auth do MasIA tenant-gateway sobre Postgres.",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

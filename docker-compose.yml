@@ -1,0 +1,63 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Ambiente local completo do TimeFlow (frontend + gateway + Postgres)
+#
+#   db      → Postgres 16 (banco do tenant)
+#   gateway → gateway local que implementa /data e /auth sobre o Postgres
+#   web     → frontend Vite (TanStack Start) apontando para o gateway
+#
+# Subir tudo:   docker compose up --build
+# Acessar:      http://localhost:5173
+# Gateway:      http://localhost:8787/health
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: masia_local_db
+    environment:
+      POSTGRES_USER: masia
+      POSTGRES_PASSWORD: masia_dev
+      POSTGRES_DB: tenant_local
+    ports:
+      - "5432:5432"
+    volumes:
+      - masia_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U masia -d tenant_local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  gateway:
+    build:
+      context: ./local-gateway
+    container_name: masia_local_gateway
+    environment:
+      PORT: "8787"
+      DATABASE_URL: "postgres://masia:masia_dev@db:5432/tenant_local"
+      MIGRATIONS_DIR: "/app/migrations"
+    ports:
+      - "8787:8787"
+    volumes:
+      # As migrations de negócio ficam no projeto e são aplicadas pelo gateway.
+      - ./db/migrations:/app/migrations:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      target: dev
+    container_name: masia_local_web
+    environment:
+      # O navegador fala com o gateway por esta URL (host, não rede interna).
+      VITE_GATEWAY_URL: "http://localhost:8787"
+    ports:
+      - "5173:5173"
+    # Força host/porta previsíveis para o mapeamento acima.
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+    depends_on:
+      - gateway
+
+volumes:
+  masia_pgdata:

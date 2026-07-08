@@ -1,0 +1,93 @@
+{
+  "id": "timeflow",
+  "name": "TimeFlow",
+  "description": "Work Management / Time Tracking: clientes, projetos, tasks, timer, time entries, invoices, relatórios e analytics. Multi-tenant pelo gateway.",
+  "version": "1.0.0",
+  "engine": "vite-react-gateway",
+  "schemaVersion": 1,
+  "migrations": ["db/migrations/0001_business_schema.sql"],
+  "auth": { "provider": "better-auth", "roles": ["admin", "manager", "rep"] },
+  "screens": [
+    {
+      "id": "dashboard",
+      "route": "/dashboard",
+      "title": "Dashboard",
+      "file": "src/screens/DashboardScreen"
+    },
+    {
+      "id": "clients",
+      "route": "/clients",
+      "title": "Clientes",
+      "file": "src/screens/ClientsScreen"
+    },
+    {
+      "id": "projects",
+      "route": "/projects",
+      "title": "Projetos",
+      "file": "src/screens/ProjectsScreen"
+    },
+    { "id": "tasks", "route": "/tasks", "title": "Tasks", "file": "src/screens/TasksScreen" },
+    { "id": "timer", "route": "/timer", "title": "Timer", "file": "src/screens/TimerScreen" },
+    {
+      "id": "time-entries",
+      "route": "/time-entries",
+      "title": "Time Entries",
+      "file": "src/screens/TimeEntriesScreen"
+    },
+    {
+      "id": "calendar",
+      "route": "/calendar",
+      "title": "Calendário",
+      "file": "src/screens/CalendarScreen"
+    },
+    {
+      "id": "invoices",
+      "route": "/invoices",
+      "title": "Invoices",
+      "file": "src/screens/InvoicesScreen"
+    },
+    {
+      "id": "reports",
+      "route": "/reports",
+      "title": "Relatórios",
+      "file": "src/screens/ReportsScreen"
+    },
+    {
+      "id": "analytics",
+      "route": "/analytics",
+      "title": "Analytics",
+      "file": "src/screens/AnalyticsScreen"
+    },
+    { "id": "team", "route": "/team", "title": "Equipe", "file": "src/screens/TeamScreen" },
+    {
+      "id": "settings",
+      "route": "/settings",
+      "title": "Configurações",
+      "file": "src/screens/SettingsScreen"
+    },
+    { "id": "login", "route": "/login", "title": "Entrar", "file": "src/screens/LoginScreen" }
+  ],
+  "editable": {
+    "allow": [
+      "src/screens/**",
+      "src/components/**",
+      "src/features/**",
+      "src/hooks/**",
+      "src/lib/data/*.repo.ts",
+      "src/lib/data/index.ts",
+      "src/lib/format.ts",
+      "src/styles.css"
+    ],
+    "protect": [
+      "src/lib/data/client.ts",
+      "src/lib/data/types.gen.ts",
+      "src/lib/auth.tsx",
+      "src/components/ui/**",
+      "src/lib/utils.ts",
+      "preview-fixtures.ts",
+      "db/migrations/**"
+    ]
+  },
+  "composio": { "toolkits": [] },
+  "envContract": ["VITE_GATEWAY_URL"]
+}
