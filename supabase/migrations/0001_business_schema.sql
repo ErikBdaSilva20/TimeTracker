@@ -2,6 +2,15 @@
 -- Portable Postgres schema for TimeFlow (Neon / Supabase compatible).
 -- Assumes a Better-Auth "user" table already exists in the tenant database.
 -- No RLS, no auth.uid(), no procedures — business rules live in the app.
+--
+-- Consolidated: this single file replaces what used to be three sequential
+-- migrations (0001 business schema, 0002 timer accumulated_seconds, 0003
+-- settings BRL/America-Sao_Paulo defaults). The CREATE TABLE statements below
+-- already reflect the final, current shape of the schema, and the
+-- reconciliation block at the end brings any database that was only ever
+-- provisioned with the original 0001 (missing the timer/settings fixes) up to
+-- date too — so this one file is safe to run once against either a brand new
+-- database or one that already has the old schema.
 
 create extension if not exists "pgcrypto";
 
@@ -126,6 +135,9 @@ create table if not exists tags (
 );
 
 -- timer_sessions
+-- accumulated_seconds: needed to survive multiple pause/resume cycles across
+-- reloads/crashes without reconstructing elapsed time from timestamp math
+-- alone (audit 4.1 — timer had no persistence at all before this existed).
 create table if not exists timer_sessions (
   id uuid primary key default gen_random_uuid(),
   owner_id text not null references "user"(id) on delete cascade,
@@ -136,6 +148,7 @@ create table if not exists timer_sessions (
   started_at timestamptz,
   paused_at timestamptz,
   status text,
+  accumulated_seconds integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -205,11 +218,15 @@ create table if not exists invoice_items (
 );
 
 -- settings
+-- currency/timezone default to BRL/America-Sao_Paulo, not USD/UTC: the app is
+-- BRL/pt-BR only (see src/lib/format.ts), and a tenant seeded by the gateway
+-- before ever saving the Settings screen would otherwise disagree with what
+-- the rest of the app already assumes (audit 4.3).
 create table if not exists settings (
   id uuid primary key default gen_random_uuid(),
   owner_id text not null references "user"(id) on delete cascade,
-  currency text not null default 'USD',
-  timezone text not null default 'UTC',
+  currency text not null default 'BRL',
+  timezone text not null default 'America/Sao_Paulo',
   default_hour_rate numeric,
   workdays jsonb,
   date_format text,
@@ -217,3 +234,17 @@ create table if not exists settings (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- ─── Reconciliação ──────────────────────────────────────────────────────────
+-- Idempotent no-ops on a database created straight from this file; bring a
+-- database that was only ever provisioned with the original (pre-consolidation)
+-- 0001 up to the same final state.
+alter table timer_sessions
+  add column if not exists accumulated_seconds integer not null default 0;
+
+alter table settings
+  alter column currency set default 'BRL',
+  alter column timezone set default 'America/Sao_Paulo';
+
+update settings set currency = 'BRL' where currency = 'USD';
+update settings set timezone = 'America/Sao_Paulo' where timezone = 'UTC';

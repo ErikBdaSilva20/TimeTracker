@@ -12,7 +12,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: masia_local_db
+    container_name: masia_local_timeflow
     environment:
       POSTGRES_USER: masia
       POSTGRES_PASSWORD: masia_dev

@@ -5,11 +5,7 @@
   "version": "1.0.0",
   "engine": "vite-react-gateway",
   "schemaVersion": 1,
-  "migrations": [
-    "supabase/migrations/0001_business_schema.sql",
-    "supabase/migrations/0002_timer_session_accumulated_seconds.sql",
-    "supabase/migrations/0003_settings_default_locale.sql"
-  ],
+  "migrations": ["supabase/migrations/0001_business_schema.sql"],
   "auth": { "provider": "better-auth", "roles": ["admin", "manager", "rep"] },
   "screens": [
     {
